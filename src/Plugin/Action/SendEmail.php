@@ -7,9 +7,11 @@
 
 namespace Drupal\rules\Plugin\Action;
 
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\rules\Engine\RulesActionBase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -49,7 +51,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * @todo: Add access callback information from Drupal 7.
  * @todo: Add group information from Drupal 7.
  */
-class SendEmail extends RulesActionBase {
+class SendEmail extends RulesActionBase implements ContainerFactoryPluginInterface {
 
   /**
    * @var LoggerInterface $logger
@@ -57,7 +59,7 @@ class SendEmail extends RulesActionBase {
   protected $logger;
 
   /**
-   * Constructs a CreatePathAlias object.
+   * Constructs a SendEmail object.
    *
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
@@ -108,6 +110,7 @@ class SendEmail extends RulesActionBase {
     // @todo: Try to fetch rule name here and use it to build $key string.
     $key = 'rules_action_mail_' . $this->getPluginId();
 
+    // @todo: inject proper service once https://www.drupal.org/node/2301393 will be pushed.
     $message = drupal_mail('rules', $key, $send_to, $params['langcode'], $params, $from);
 
     if ($message['result']) {
