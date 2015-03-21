@@ -44,24 +44,20 @@ trait ContextHandlerTrait {
   protected function mapContext(ContextAwarePluginInterface $plugin, RulesState $state) {
     $context_definitions = $plugin->getContextDefinitions();
     foreach ($context_definitions as $name => $definition) {
-      $context_value = NULL;
-      // First check if we can forward a context directly set on this plugin.
-      try {
-        $context_value = $this->getContextValue($name);
+      // Check if a data selector is configured that maps to the state.
+      if (isset($this->configuration['context_mapping'][$name])) {
+        $typed_data = $state->applyDataSelector($this->configuration['context_mapping'][$name]);
+        $plugin->getContext($name)->setContextData($typed_data);
       }
-      // A context exception means that there is no context with the given name,
-      // so we catch it and continue with the context mapping below.
-      catch (ContextException $e) {
+      // @todo: This misses support for picking up pre-defined values here.
+
+      elseif ($this->getContext($name)->hasContextData()) {
+        $typed_data = $this->getContext($name)
+          ->getContextData();
+        $plugin->getContext($name)
+          ->setContextData($typed_data);
       }
 
-      if ($context_value) {
-        $plugin->setContextValue($name, $context_value);
-      }
-      // Check if a data selector is configured that maps to the state.
-      elseif (isset($this->configuration['context_mapping'][$name])) {
-        $typed_data = $state->applyDataSelector($this->configuration['context_mapping'][$name]);
-        $plugin->setContextValue($name, $typed_data);
-      }
       elseif ($definition->isRequired()) {
         throw new RulesEvaluationException(String::format('Required context @name is missing for plugin @plugin.', [
           '@name' => $name,
