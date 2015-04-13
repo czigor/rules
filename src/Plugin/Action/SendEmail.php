@@ -14,6 +14,7 @@ use Drupal\rules\Core\RulesActionBase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Language\LanguageInterface;
 
 /**
  * Provides "Send email" rules action.
@@ -111,10 +112,11 @@ class SendEmail extends RulesActionBase implements ContainerFactoryPluginInterfa
     $to = $this->getContextValue('to');
     // @todo: Implement hook_mail_alter() in order to modify the FROM header according to https://www.drupal.org/node/2164905.
     $reply = $this->getContextValue('reply');
+    $language = $this->getContextValue('language');
     $params = array(
       'subject' => $this->getContextValue('subject'),
       'message' => $this->getContextValue('message'),
-      'langcode' => "en", //$this->getContextValue('language'),
+      'langcode' => isset($language) ? $language->getId() : LanguageInterface::LANGCODE_SITE_DEFAULT,
     );
     // Set a unique key for this mail.
     $key = 'rules_action_mail_' . $this->getPluginId();
