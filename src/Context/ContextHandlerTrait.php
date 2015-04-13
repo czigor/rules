@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\rules\Context\RulesContextTrait.
+ * Contains \Drupal\rules\Context\ContextHandlerTrait.
  */
 
 namespace Drupal\rules\Context;
@@ -10,21 +10,18 @@ namespace Drupal\rules\Context;
 use Drupal\Component\Plugin\ContextAwarePluginInterface;
 use Drupal\Component\Plugin\Exception\ContextException;
 use Drupal\Component\Utility\String;
-use Drupal\Core\Plugin\Context\Context;
 use Drupal\rules\Exception\RulesEvaluationException;
 use Drupal\rules\Engine\RulesState;
 
 /**
- * Offers common methods for context plugin implementers.
+ * Provides methods for handling context based on the plugin configuration.
+ *
+ * The trait requires the plugin to use configuration as defined by the
+ * ContextConfig class.
+ *
+ * @see \Drupal\rules\Context\ContextConfig
  */
-trait RulesContextTrait {
-
-  /**
-   * The data objects that are provided by this plugin.
-   *
-   * @var \Drupal\Component\Plugin\Context\ContextInterface[]
-   */
-  protected $provided;
+trait ContextHandlerTrait {
 
   /**
    * The data processor plugin manager used to process context variables.
@@ -32,44 +29,6 @@ trait RulesContextTrait {
    * @var \Drupal\rules\Context\DataProcessorManager
    */
   protected $processorManager;
-
-  /**
-   * @see \Drupal\rules\Context\ProvidedContextPlugininterface
-   */
-  public function setProvidedValue($name, $value) {
-    $this->getProvided($name)->setContextValue($value);
-    return $this;
-  }
-
-  /**
-   * @see \Drupal\rules\Context\ProvidedContextPlugininterface
-   */
-  public function getProvided($name) {
-    // Check for a valid context value.
-    if (!isset($this->provided[$name])) {
-      $this->provided[$name] = new Context($this->getProvidedDefinition($name));
-    }
-    return $this->provided[$name];
-  }
-
-  /**
-   * @see \Drupal\rules\Context\ProvidedContextPlugininterface
-   */
-  public function getProvidedDefinition($name) {
-    $definition = $this->getPluginDefinition();
-    if (empty($definition['provides'][$name])) {
-      throw new ContextException(sprintf("The %s provided context is not valid.", $name));
-    }
-    return $definition['provides'][$name];
-  }
-
-  /**
-   * @see \Drupal\rules\Context\ProvidedContextPlugininterface
-   */
-  public function getProvidedDefinitions() {
-    $definition = $this->getPluginDefinition();
-    return !empty($definition['provides']) ? $definition['provides'] : [];
-  }
 
   /**
    * Maps variables from rules state into the plugin context.
@@ -115,21 +74,21 @@ trait RulesContextTrait {
   /**
    * Maps provided context values from the plugin to the Rules state.
    *
-   * @param ProvidedContextPluginInterface $plugin
+   * @param ContextProviderInterface $plugin
    *   The plugin where the context values are extracted.
    * @param \Drupal\rules\Engine\RulesState $state
    *   The Rules state where the context variables are added.
    */
-  protected function mapProvidedContext(ProvidedContextPluginInterface $plugin, RulesState $state) {
-    $provides = $plugin->getProvidedDefinitions();
+  protected function mapProvidedContext(ContextProviderInterface $plugin, RulesState $state) {
+    $provides = $plugin->getProvidedContextDefinitions();
     foreach ($provides as $name => $provided_definition) {
       // Avoid name collisions in the rules state: provided variables can be
       // renamed.
       if (isset($this->configuration['provides_mapping'][$name])) {
-        $state->addVariable($this->configuration['provides_mapping'][$name], $plugin->getProvided($name));
+        $state->addVariable($this->configuration['provides_mapping'][$name], $plugin->getProvidedContext($name));
       }
       else {
-        $state->addVariable($name, $plugin->getProvided($name));
+        $state->addVariable($name, $plugin->getProvidedContext($name));
       }
     }
   }
