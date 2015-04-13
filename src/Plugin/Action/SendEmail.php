@@ -15,8 +15,6 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-use Drupal\Core\Render\Element;
-
 /**
  * Provides "Send email" rules action.
  *
