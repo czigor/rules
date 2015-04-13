@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\Tests\rules\Integration\Action\SendEmailTest.
+ * Contains \Drupal\Tests\rules\Integration\Action\SystemSendEmailTest.
  */
 
 namespace Drupal\Tests\rules\Integration\Action;
@@ -11,10 +11,10 @@ use Drupal\Tests\rules\Integration\RulesIntegrationTestBase;
 use Drupal\Core\Language\LanguageInterface;
 
 /**
- * @coversDefaultClass \Drupal\rules\Plugin\Action\SendEmail
+ * @coversDefaultClass \Drupal\rules\Plugin\Action\SystemSendEmail
  * @group rules_actions
  */
-class SendEmailTest extends RulesIntegrationTestBase {
+class SystemSendEmailTest extends RulesIntegrationTestBase {
 
   /**
    * @var \Psr\Log\LoggerInterface
@@ -29,7 +29,7 @@ class SendEmailTest extends RulesIntegrationTestBase {
   /**
    * The action to be tested.
    *
-   * @var \Drupal\rules\Plugin\Action\SendEmail
+   * @var \Drupal\rules\Plugin\Action\SystemSendEmail
    */
   protected $action;
 

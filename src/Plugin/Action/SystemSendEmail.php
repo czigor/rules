@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains Drupal\rules\Plugin\Action\SendEmail.
+ * Contains Drupal\rules\Plugin\Action\SystemSendEmail.
  */
 
 namespace Drupal\rules\Plugin\Action;
@@ -22,6 +22,7 @@ use Drupal\Core\Language\LanguageInterface;
  * @Action(
  *   id = "rules_send_email",
  *   label = @Translation("Send email"),
+ *   category = @Translation("System"),
  *   context = {
  *     "to" = @ContextDefinition("email",
  *       label = @Translation("Send to"),
@@ -53,7 +54,7 @@ use Drupal\Core\Language\LanguageInterface;
  * @todo: Add access callback information from Drupal 7.
  * @todo: Add group information from Drupal 7.
  */
-class SendEmail extends RulesActionBase implements ContainerFactoryPluginInterface {
+class SystemSendEmail extends RulesActionBase implements ContainerFactoryPluginInterface {
 
   /**
    * @var \Psr\Log\LoggerInterface
