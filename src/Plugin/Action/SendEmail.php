@@ -8,8 +8,8 @@
 namespace Drupal\rules\Plugin\Action;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\MailManager;
-use Drupal\Core\MailManagerInterface;
+use Drupal\Core\Mail\MailManager;
+use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\rules\Core\RulesActionBase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
@@ -55,12 +55,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class SendEmail extends RulesActionBase implements ContainerFactoryPluginInterface {
 
   /**
-   * @var LoggerInterface $logger
+   * @var \Psr\Log\LoggerInterface
    */
   protected $logger;
 
   /**
-   * @var MailManagerInterface $mailManager
+   * @var \Drupal\Core\Mail\MailManagerInterface
    */
   protected $mailManager;
 
@@ -73,7 +73,7 @@ class SendEmail extends RulesActionBase implements ContainerFactoryPluginInterfa
    *   The plugin ID for the plugin instance.
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
-   * @param LoggerInterface $logger
+   * @param \Psr\Log\LoggerInterface $logger
    *   The alias storage service.
    * @param $mail_manager
    *   The alias mail manager service.
