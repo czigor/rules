@@ -8,6 +8,7 @@
 namespace Drupal\Tests\rules\Integration\Action;
 
 use Drupal\Tests\rules\Integration\RulesIntegrationTestBase;
+use Drupal\Core\Language\LanguageInterface;
 
 /**
  * @coversDefaultClass \Drupal\rules\Plugin\Action\SendEmail
@@ -28,7 +29,7 @@ class SendEmailTest extends RulesIntegrationTestBase {
   /**
    * The action to be tested.
    *
-   * @var \Drupal\rules\Core\RulesActionInterface
+   * @var \Drupal\rules\Plugin\Action\SendEmail
    */
   protected $action;
 
@@ -66,26 +67,34 @@ class SendEmailTest extends RulesIntegrationTestBase {
    */
   public function testActionExecution() {
     $params = array(
-      'to' => "mail@example.com",
-      'from' => "admin@example.com",
+      'to' => array('mail@example.com'),
+      'from' => 'admin@example.com',
       'result' => TRUE,
     );
 
-    $this->mailManager
-      ->expects($this->any())
-      ->method('mail')
-      ->will($this->returnValue($params));
-
-
-    $this->action->setContextValue('to', array('mail@example.com'))
+    $this->action->setContextValue('to', $params['to'])
       ->setContextValue('subject', 'subject')
       ->setContextValue('message', 'hello');
+
+    $reply = $this->action->getContextValue('reply');
+    $language = $this->action->getContextValue('language');
+    $mail_params = array(
+      'subject' => $this->action->getContextValue('subject'),
+      'message' => $this->action->getContextValue('message'),
+      'langcode' => isset($language) ? $language->getId() : LanguageInterface::LANGCODE_SITE_DEFAULT,
+    );
+
+    $this->mailManager
+      ->expects($this->once())
+      ->method('mail')
+      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), $params['to'], $mail_params['langcode'], $mail_params, $reply)
+      ->will($this->returnValue($params));
+
     $message = $this->action->execute();
 
-    $this->assertEquals(1, $message["result"]);
-    $this->assertEquals('mail@example.com', $message['to']);
-    $this->assertEquals('admin@example.com', $message['from']);
-
+    $this->assertEquals(1, $message['result']);
+    $this->assertEquals($params['to'], $message['to']);
+    $this->assertEquals($params['from'], $message['from']);
   }
 
 }
