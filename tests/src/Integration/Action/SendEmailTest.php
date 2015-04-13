@@ -71,14 +71,14 @@ class SendEmailTest extends RulesIntegrationTestBase {
       ->will($this->returnValue($params));
 
 
-    $this->action->setContextValue("send_to", array('mail@example.com'))
-      ->setContextValue("subject", 'subject')
-      ->setContextValue("message", 'hello');
+    $this->action->setContextValue('to', array('mail@example.com'))
+      ->setContextValue('subject', 'subject')
+      ->setContextValue('message', 'hello');
     $message = $this->action->execute();
 
     $this->assertEquals(1, $message["result"]);
-    $this->assertEquals('mail@example.com', $message["to"]);
-    $this->assertEquals('admin@example.com', $message["from"]);
+    $this->assertEquals('mail@example.com', $message['to']);
+    $this->assertEquals('admin@example.com', $message['from']);
 
   }
 

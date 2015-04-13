@@ -22,7 +22,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   id = "rules_send_email",
  *   label = @Translation("Send email"),
  *   context = {
- *     "send_to" = @ContextDefinition("email",
+ *     "to" = @ContextDefinition("email",
  *       label = @Translation("Send to"),
  *       description = @Translation("Email address(es) drupal will send an email to."),
  *       multiple = TRUE,
@@ -108,7 +108,7 @@ class SendEmail extends RulesActionBase implements ContainerFactoryPluginInterfa
    * {@inheritdoc}
    */
   public function execute() {
-    $send_to = $this->getContextValue('send_to');
+    $to = $this->getContextValue('to');
     // @todo: Implement hook_mail_alter() in order to modify the FROM header according to https://www.drupal.org/node/2164905.
     $reply = $this->getContextValue('reply');
     $params = array(
@@ -119,10 +119,10 @@ class SendEmail extends RulesActionBase implements ContainerFactoryPluginInterfa
     // Set a unique key for this mail.
     $key = 'rules_action_mail_' . $this->getPluginId();
 
-    $message = $this->mailManager->mail('rules', $key, $send_to, $params['langcode'], $params, $reply);
+    $message = $this->mailManager->mail('rules', $key, $to, $params['langcode'], $params, $reply);
 
     if ($message['result']) {
-      $recipient = implode(", ", $send_to);
+      $recipient = implode(", ", $to);
       $this->logger->log(LogLevel::NOTICE, $this->t('Successfully sent email to %recipient', array('%recipient' => $recipient)));
 
     }
