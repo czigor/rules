@@ -9,14 +9,20 @@ namespace Drupal\Tests\rules\Integration\Action;
 
 use Drupal\Tests\rules\Integration\RulesIntegrationTestBase;
 
-
 /**
  * @coversDefaultClass \Drupal\rules\Plugin\Action\SendEmail
  * @group rules_actions
  */
 class SendEmailTest extends RulesIntegrationTestBase {
 
+  /**
+   * @var \Psr\Log\LoggerInterface
+   */
   protected $logger;
+
+  /**
+   * @var \Drupal\Core\Mail\MailManagerInterface
+   */
   protected $mailManager;
 
   /**
