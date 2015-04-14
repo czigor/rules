@@ -114,22 +114,20 @@ class SystemSendEmail extends RulesActionBase implements ContainerFactoryPluginI
     // @todo: Implement hook_mail_alter() in order to modify the FROM header according to https://www.drupal.org/node/2164905.
     $reply = $this->getContextValue('reply');
     $language = $this->getContextValue('language');
+    $langcode = isset($language) ? $language->getId() : LanguageInterface::LANGCODE_SITE_DEFAULT;
     $params = array(
       'subject' => $this->getContextValue('subject'),
       'message' => $this->getContextValue('message'),
-      'langcode' => isset($language) ? $language->getId() : LanguageInterface::LANGCODE_SITE_DEFAULT,
     );
     // Set a unique key for this mail.
     $key = 'rules_action_mail_' . $this->getPluginId();
 
-    $message = $this->mailManager->mail('rules', $key, $to, $params['langcode'], $params, $reply);
-
+    $recipients = implode(', ', $to);
+    $message = $this->mailManager->mail('rules', $key, $recipients, $langcode, $params, $reply);
     if ($message['result']) {
-      $recipient = implode(", ", $to);
-      $this->logger->log(LogLevel::NOTICE, $this->t('Successfully sent email to %recipient', array('%recipient' => $recipient)));
-
+      $this->logger->log(LogLevel::NOTICE, $this->t('Successfully sent email to %recipient', array('%recipient' => $recipients)));
     }
-    return $message;
+
   }
 
 }
