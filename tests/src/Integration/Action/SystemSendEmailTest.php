@@ -67,17 +67,17 @@ class SystemSendEmailTest extends RulesIntegrationTestBase {
    * @covers ::execute
    */
   public function testSendMailToOneRecipient() {
-    $to = array('mail@example.com');
+    $to = ['mail@example.com'];
     $this->action->setContextValue('to', $to)
       ->setContextValue('subject', 'subject')
       ->setContextValue('message', 'hello');
 
     $language = $this->action->getContextValue('language');
     $langcode = isset($language) ? $language->getId() : LanguageInterface::LANGCODE_SITE_DEFAULT;
-    $params = array(
+    $params = [
       'subject' => $this->action->getContextValue('subject'),
       'message' => $this->action->getContextValue('message'),
-    );
+    ];
 
     $this->mailManager
       ->expects($this->once())
@@ -88,7 +88,7 @@ class SystemSendEmailTest extends RulesIntegrationTestBase {
     $this->logger
       ->expects($this->once())
       ->method('log')
-      ->with(LogLevel::NOTICE, SafeMarkup::format('Successfully sent email to %to', array('%to' => implode(', ', $to))));
+      ->with(LogLevel::NOTICE, SafeMarkup::format('Successfully sent email to %to', ['%to' => implode(', ', $to)]));
 
     $this->action->execute();
   }
@@ -99,17 +99,17 @@ class SystemSendEmailTest extends RulesIntegrationTestBase {
    * @covers ::execute
    */
   public function testSendMailToTwoRecipients() {
-    $to = array('mail@example.com', 'mail2@example.com');
+    $to = ['mail@example.com', 'mail2@example.com'];
     $this->action->setContextValue('to', $to)
       ->setContextValue('subject', 'subject')
       ->setContextValue('message', 'hello');
 
     $language = $this->action->getContextValue('language');
     $langcode = isset($language) ? $language->getId() : LanguageInterface::LANGCODE_SITE_DEFAULT;
-    $params = array(
+    $params = [
       'subject' => $this->action->getContextValue('subject'),
       'message' => $this->action->getContextValue('message'),
-    );
+    ];
 
     $this->mailManager
       ->expects($this->once())
@@ -120,7 +120,7 @@ class SystemSendEmailTest extends RulesIntegrationTestBase {
     $this->logger
       ->expects($this->once())
       ->method('log')
-      ->with(LogLevel::NOTICE, SafeMarkup::format('Successfully sent email to %to', array('%to' => implode(', ', $to))));
+      ->with(LogLevel::NOTICE, SafeMarkup::format('Successfully sent email to %to', ['%to' => implode(', ', $to)]));
 
     $this->action->execute();
   }

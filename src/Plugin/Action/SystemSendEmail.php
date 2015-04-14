@@ -115,17 +115,17 @@ class SystemSendEmail extends RulesActionBase implements ContainerFactoryPluginI
     $reply = $this->getContextValue('reply');
     $language = $this->getContextValue('language');
     $langcode = isset($language) ? $language->getId() : LanguageInterface::LANGCODE_SITE_DEFAULT;
-    $params = array(
+    $params = [
       'subject' => $this->getContextValue('subject'),
       'message' => $this->getContextValue('message'),
-    );
+    ];
     // Set a unique key for this mail.
     $key = 'rules_action_mail_' . $this->getPluginId();
 
     $recipients = implode(', ', $to);
     $message = $this->mailManager->mail('rules', $key, $recipients, $langcode, $params, $reply);
     if ($message['result']) {
-      $this->logger->log(LogLevel::NOTICE, $this->t('Successfully sent email to %recipient', array('%recipient' => $recipients)));
+      $this->logger->log(LogLevel::NOTICE, $this->t('Successfully sent email to %recipient', ['%recipient' => $recipients]));
     }
 
   }
