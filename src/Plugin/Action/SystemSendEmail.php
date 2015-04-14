@@ -111,7 +111,6 @@ class SystemSendEmail extends RulesActionBase implements ContainerFactoryPluginI
    */
   public function execute() {
     $to = $this->getContextValue('to');
-    // @todo: Implement hook_mail_alter() in order to modify the FROM header according to https://www.drupal.org/node/2164905.
     $reply = $this->getContextValue('reply');
     $language = $this->getContextValue('language');
     $langcode = isset($language) ? $language->getId() : LanguageInterface::LANGCODE_SITE_DEFAULT;
