@@ -43,7 +43,6 @@ class SystemSendEmailTest extends RulesIntegrationTestBase {
     $this->logger = $this->getMock('Psr\Log\LoggerInterface');
 
     $this->mailManager = $this->getMockBuilder('Drupal\Core\Mail\MailManagerInterface')
-      ->disableOriginalConstructor()
       ->getMock();
 
     $this->container->set('logger.factory', $this->logger);
