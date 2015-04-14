@@ -83,7 +83,8 @@ class SystemSendEmailTest extends RulesIntegrationTestBase {
     $this->mailManager
       ->expects($this->once())
       ->method('mail')
-      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), implode(', ', $to), $langcode, $params);
+      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), implode(', ', $to), $langcode, $params)
+      ->willReturn(['result' => TRUE]);
 
     $this->logger
       ->expects($this->once())
