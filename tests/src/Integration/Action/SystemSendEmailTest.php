@@ -63,12 +63,44 @@ class SystemSendEmailTest extends RulesIntegrationTestBase {
   }
 
   /**
-   * Tests the action execution.
+   * Tests sending a mail to one recipient.
    *
    * @covers ::execute
    */
-  public function testActionExecution() {
+  public function testSendMailToOneRecipient() {
     $to = array('mail@example.com');
+    $this->action->setContextValue('to', $to)
+      ->setContextValue('subject', 'subject')
+      ->setContextValue('message', 'hello');
+
+    $language = $this->action->getContextValue('language');
+    $langcode = isset($language) ? $language->getId() : LanguageInterface::LANGCODE_SITE_DEFAULT;
+    $params = array(
+      'subject' => $this->action->getContextValue('subject'),
+      'message' => $this->action->getContextValue('message'),
+    );
+
+    $this->mailManager
+      ->expects($this->once())
+      ->method('mail')
+      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), implode(', ', $to), $langcode, $params)
+      ->willReturn(['result' => TRUE]);
+
+    $this->logger
+      ->expects($this->once())
+      ->method('log')
+      ->with(LogLevel::NOTICE, SafeMarkup::format('Successfully sent email to %to', array('%to' => implode(', ', $to))));
+
+    $this->action->execute();
+  }
+
+  /**
+   * Tests sending a mail to two recipients.
+   *
+   * @covers ::execute
+   */
+  public function testSendMailToTwoRecipients() {
+    $to = array('mail@example.com', 'mail2@example.com');
     $this->action->setContextValue('to', $to)
       ->setContextValue('subject', 'subject')
       ->setContextValue('message', 'hello');
