@@ -14,7 +14,8 @@ use Drupal\rules\Core\RulesActionBase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Language\LanguageInterface;
+use Drupal\user\Entity\Role;
+
 /**
  * Provides a 'Mail to users of a role' action.
  *
@@ -46,7 +47,7 @@ use Drupal\Core\Language\LanguageInterface;
  *
  * @todo: Add access callback information from Drupal 7.
  */
-class SystemMailToUsersOfRole extends RulesActionBase {
+class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactoryPluginInterface {
 
   /**
    * @var \Psr\Log\LoggerInterface
@@ -69,10 +70,10 @@ class SystemMailToUsersOfRole extends RulesActionBase {
    *   The plugin implementation definition.
    * @param \Psr\Log\LoggerInterface $logger
    *   The alias storage service.
-   * @param $mail_manager
+   * @param \Drupal\Core\Mail\MailManagerInterface $mail_manager
    *   The alias mail manager service.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, $mail_manager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, MailManagerInterface $mail_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->logger = $logger;
     $this->mailManager = $mail_manager;

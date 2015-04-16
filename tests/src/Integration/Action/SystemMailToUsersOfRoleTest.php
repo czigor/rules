@@ -7,19 +7,18 @@
 
 namespace Drupal\Tests\rules\Integration\Action;
 
-use Drupal\Tests\rules\Integration\RulesIntegrationTestBase;
+use Drupal\Tests\rules\Integration\RulesEntityIntegrationTestBase;
 use Drupal\Core\Language\LanguageInterface;
 use Psr\Log\LogLevel;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\user\Entity\User;
 use Drupal\user\Entity\Role;
-use Drupal\user\RoleInterface;
 
 /**
  * @coversDefaultClass \Drupal\rules\Plugin\Action\SystemMailToUsersOfRole
  * @group rules_actions
  */
-class SystemMailToUsersOfRoleTest extends RulesIntegrationTestBase {
+class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
 
   /**
    * @var \Psr\Log\LoggerInterface
@@ -32,12 +31,12 @@ class SystemMailToUsersOfRoleTest extends RulesIntegrationTestBase {
   protected $mailManager;
 
   /**
-   * @var \Drupal\user\RoleInterface
+   * @var \Drupal\user\Entity\Role
    */
   protected $role1;
 
   /**
-   * @var \Drupal\user\RoleInterface
+   * @var \Drupal\user\Entity\Role
    */
   protected $role2;
 
@@ -78,24 +77,45 @@ class SystemMailToUsersOfRoleTest extends RulesIntegrationTestBase {
    */
   public function setUp() {
     parent::setUp();
+    $this->enableModule('user');
+
     $this->logger = $this->getMock('Psr\Log\LoggerInterface');
 
     $this->mailManager = $this->getMockBuilder('Drupal\Core\Mail\MailManagerInterface')
       ->getMock();
 
-    $this->role1 = $this->getMock('\Drupal\user\RoleInterface');
-    $this->role2 = $this->getMock('\Drupal\user\RoleInterface');
+    $this->role1 = $this->getMockBuilder('\Drupal\user\Entity\Role')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $this->role2 = $this->getMockBuilder('\Drupal\user\Entity\Role')
+      ->disableOriginalConstructor()
+      ->getMock();
 
-    $this->user1 = $this->getMock('\Drupal\user\Entity\User')->addRole($this->role1->id());
-    $this->user2 = $this->getMock('\Drupal\user\Entity\User')->addRole($this->role1->id());
-    $this->user3 = $this->getMock('\Drupal\user\Entity\User')->addRole($this->role1->id());
-    $this->user4 = $this->getMock('\Drupal\user\Entity\User')->addRole($this->role2->id());
-    $this->user5 = $this->getMock('\Drupal\user\Entity\User')->addRole($this->role2->id());
+    $this->user1 = $this->getMockBuilder('\Drupal\user\Entity\User')
+      ->disableOriginalConstructor()
+      ->getMock()
+      ->addRole($this->role1->id());
+    $this->user2 = $this->getMockBuilder('\Drupal\user\Entity\User')
+      ->disableOriginalConstructor()
+      ->getMock()
+      ->addRole($this->role1->id());
+    $this->user3 = $this->getMockBuilder('\Drupal\user\Entity\User')
+      ->disableOriginalConstructor()
+      ->getMock()
+      ->addRole($this->role1->id());
+    $this->user4 = $this->getMockBuilder('\Drupal\user\Entity\User')
+      ->disableOriginalConstructor()
+      ->getMock()
+      ->addRole($this->role2->id());
+    $this->user5 = $this->getMockBuilder('\Drupal\user\Entity\User')
+      ->disableOriginalConstructor()
+      ->getMock()
+      ->addRole($this->role2->id());
 
     $this->container->set('logger.factory', $this->logger);
     $this->container->set('plugin.manager.mail', $this->mailManager);
 
-    $this->action = $this->actionManager->createInstance('rules_send_email');
+    $this->action = $this->actionManager->createInstance('rules_mail_to_users_of_role');
   }
 
   /**
@@ -104,7 +124,7 @@ class SystemMailToUsersOfRoleTest extends RulesIntegrationTestBase {
    * @covers ::summary
    */
   public function testSummary() {
-    $this->assertEquals('Send email', $this->action->summary());
+    $this->assertEquals('Sends an e-mail to the users of a role', $this->action->summary());
   }
 
   /**
@@ -113,7 +133,7 @@ class SystemMailToUsersOfRoleTest extends RulesIntegrationTestBase {
    * @covers ::execute
    */
   public function testSendMailToOneRole() {
-    $roles = [$this->role1->id];
+    $roles = [$this->role1];
     $this->action->setContextValue('roles', $roles)
       ->setContextValue('subject', 'subject')
       ->setContextValue('body', 'hello');
