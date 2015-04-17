@@ -15,6 +15,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\user\Entity\Role;
+use Drupal\Core\Config\ConfigFactoryInterface;
 
 /**
  * Provides a 'Mail to users of a role' action.
@@ -60,6 +61,11 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
   protected $mailManager;
 
   /**
+   * @var \Drupal\Core\Config\ImmutableConfig
+   */
+  protected $config;
+
+  /**
    * Constructs a SendMailToUsersOfRole object.
    *
    * @param array $configuration
@@ -73,10 +79,11 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
    * @param \Drupal\Core\Mail\MailManagerInterface $mail_manager
    *   The alias mail manager service.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, MailManagerInterface $mail_manager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, MailManagerInterface $mail_manager, ConfigFactoryInterface $config_factory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->logger = $logger;
     $this->mailManager = $mail_manager;
+    $this->config = $config_factory->get('site.config');
   }
 
   /**
@@ -88,7 +95,8 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
       $plugin_id,
       $plugin_definition,
       $container->get('logger.factory'),
-      $container->get('plugin.manager.mail')
+      $container->get('plugin.manager.mail'),
+      $container->get('config.factory')
     );
   }
 
@@ -117,6 +125,7 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
     }
 
     // Get now all the users that match the roles (at least one of the role).
+
     $accounts = entity_load_multiple_by_properties('user', ['roles' => $rids]);
     // @todo: Should we implement support for tokens in subject and body? in the
     // Drupal 7 version it is not implemented for each user.
@@ -126,7 +135,7 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
     );
     $from = $this->getContextValue('from');
     if (empty($from)) {
-      $from = \Drupal::config('system.site')->get('mail');
+      $from = $this->config->get('mail');
     }
     foreach ($accounts as $account) {
       $message = $this->mailManager->mail('rules', '', $account->getEmail(), $account->getPreferredLangcode(), $params, $from);

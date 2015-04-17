@@ -114,6 +114,12 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
 
     $this->container->set('logger.factory', $this->logger);
     $this->container->set('plugin.manager.mail', $this->mailManager);
+    $config = [
+      'site.config' => [
+        'mail' => 'admin@example.com',
+      ],
+    ];
+    $this->container->set('config.factory', $this->getConfigFactoryStub($config));
 
     $this->action = $this->actionManager->createInstance('rules_mail_to_users_of_role');
   }
@@ -130,9 +136,11 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
   /**
    * Tests sending a mail to one role.
    *
+   * @dataProvider providerTestSendMailToOneRole
+   *
    * @covers ::execute
    */
-  public function testSendMailToOneRole() {
+  public function testSendMailToOneRole($user, $call_number) {
     $roles = [$this->role1];
     $this->action->setContextValue('roles', $roles)
       ->setContextValue('subject', 'subject')
@@ -145,33 +153,9 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
     ];
 
     $this->mailManager
-      ->expects($this->once())
+      ->expects($this->{$call_number}())
       ->method('mail')
-      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), implode(', ', $this->user1->getEmail()), $langcode, $params)
-      ->willReturn(['result' => TRUE]);
-
-    $this->mailManager
-      ->expects($this->once())
-      ->method('mail')
-      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), implode(', ', $this->user2->getEmail()), $langcode, $params)
-      ->willReturn(['result' => TRUE]);
-
-    $this->mailManager
-      ->expects($this->once())
-      ->method('mail')
-      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), implode(', ', $this->user3->getEmail()), $langcode, $params)
-      ->willReturn(['result' => TRUE]);
-
-    $this->mailManager
-      ->expects($this->never())
-      ->method('mail')
-      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), implode(', ', $this->user4->getEmail()), $langcode, $params)
-      ->willReturn(['result' => TRUE]);
-
-    $this->mailManager
-      ->expects($this->never())
-      ->method('mail')
-      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), implode(', ', $this->user5->getEmail()), $langcode, $params)
+      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), implode(', ', $user->getEmail()), $langcode, $params)
       ->willReturn(['result' => TRUE]);
 
     $this->logger
@@ -180,5 +164,18 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
       ->with(SafeMarkup::format('Successfully sent email to %to', ['%to' => implode(', ', $roles)]));
 
     $this->action->execute();
+  }
+
+  /**
+   * Data provider for self::testSendMailToOneRole().
+   */
+  public function providerTestSendMailToOneRole() {
+    return [
+      [$this->user1, 'once'],
+      [$this->user2, 'once'],
+      [$this->user3, 'once'],
+      [$this->user4, 'never'],
+      [$this->user5, 'never'],
+    ];
   }
 }
