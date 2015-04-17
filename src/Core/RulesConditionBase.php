@@ -22,9 +22,29 @@ abstract class RulesConditionBase extends ConditionPluginBase implements RulesCo
   /**
    * {@inheritdoc}
    */
+  public function refineContextDefinitions() {
+    // Do not refine anything by default.
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function negate($negate = TRUE) {
     $this->configuration['negate'] = $negate;
     return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function evaluate() {
+    // Provide a reasonable default implementation that calls doEvaluate() while
+    // passing the defined context as arguments.
+    $args = array();
+    foreach ($this->getContexts() as $name => $context) {
+      $args[$name] = $context->getContextValue();
+    }
+    call_user_func_array([$this, 'doEvaluate'], $args);
   }
 
 }

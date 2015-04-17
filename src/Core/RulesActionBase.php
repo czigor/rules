@@ -29,6 +29,13 @@ abstract class RulesActionBase extends ContextAwarePluginBase implements RulesAc
   /**
    * {@inheritdoc}
    */
+  public function refineContextDefinitions() {
+    // Do not refine anything by default.
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getConfiguration() {
     return [
       'id' => $this->getPluginId(),
@@ -81,6 +88,19 @@ abstract class RulesActionBase extends ContextAwarePluginBase implements RulesAc
       return new AccessResultForbidden();
     }
     return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function execute() {
+    // Provide a reasonable default implementation that calls doExecute() while
+    // passing the defined context as arguments.
+    $args = array();
+    foreach ($this->getContexts() as $name => $context) {
+      $args[$name] = $context->getContextValue();
+    }
+    call_user_func_array([$this, 'doExecute'], $args);
   }
 
 }

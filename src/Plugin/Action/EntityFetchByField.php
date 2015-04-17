@@ -89,20 +89,23 @@ class EntityFetchByField extends RulesActionBase implements ContainerFactoryPlug
   /**
    * {@inheritdoc}
    */
-  public function summary() {
-    return $this->t('Fetch entities by field');
+  public function refineContextDefinitions() {
+    if ($type = $this->getContextValue('type')) {
+      $this->pluginDefinition['provides']['entity_fetched']->setDataType("entity:$type");
+    }
   }
 
   /**
    * {@inheritdoc}
    */
-  public function execute() {
-    // Retrieve context values for action.
-    $entity_type = $this->getContextValue('type');
-    $field_name = $this->getContextValue('field_name');
-    $field_value = $this->getContextValue('field_value');
-    $limit = $this->getContextValue('limit');
+  public function summary() {
+    return $this->t('Fetch entities by field');
+  }
 
+  /**
+   * Execute the action within the given context.
+   */
+  protected function doExecute($entity_type, $field_name, $field_value, $limit = NULL) {
     $storage = $this->entityManager->getStorage($entity_type);
 
     // When retrieving entities, if $limit is not set there is no need to use
