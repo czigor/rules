@@ -16,6 +16,7 @@ use Psr\Log\LogLevel;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\user\Entity\Role;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\user\UserStorage;
 
 /**
  * Provides a 'Mail to users of a role' action.
@@ -25,7 +26,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
  *   label = @Translation("Mail to users of a role"),
  *   category = @Translation("System"),
  *   context = {
- *     "roles" = @ContextDefinition("entity:role",
+ *     "roles" = @ContextDefinition("entity",
  *       label = @Translation("Roles"),
  *       description = @Translation("The roles to which to send the e-mail."),
  *       multiple = TRUE
@@ -66,6 +67,11 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
   protected $config;
 
   /**
+   * @var \Drupal\user\UserStorage
+   */
+  protected $userStorage;
+
+  /**
    * Constructs a SendMailToUsersOfRole object.
    *
    * @param array $configuration
@@ -79,11 +85,12 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
    * @param \Drupal\Core\Mail\MailManagerInterface $mail_manager
    *   The alias mail manager service.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, MailManagerInterface $mail_manager, ConfigFactoryInterface $config_factory) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, MailManagerInterface $mail_manager, ConfigFactoryInterface $config_factory, UserStorage $userStorage) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->logger = $logger;
     $this->mailManager = $mail_manager;
     $this->config = $config_factory->get('site.config');
+    $this->userStorage = $userStorage;
   }
 
   /**
@@ -96,7 +103,8 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
       $plugin_definition,
       $container->get('logger.factory'),
       $container->get('plugin.manager.mail'),
-      $container->get('config.factory')
+      $container->get('config.factory'),
+      $container->get('entity.manager')->getStorage('user')
     );
   }
 
@@ -125,8 +133,8 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
     }
 
     // Get now all the users that match the roles (at least one of the role).
-
-    $accounts = entity_load_multiple_by_properties('user', ['roles' => $rids]);
+    $accounts = $this->userStorage
+      ->loadByProperties(['roles' => $rids]);
     // @todo: Should we implement support for tokens in subject and body? in the
     // Drupal 7 version it is not implemented for each user.
     $params = array(
@@ -137,8 +145,10 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
     if (empty($from)) {
       $from = $this->config->get('mail');
     }
+    $key = 'rules_mail_to_users_of_role_' . $this->getPluginId();
+
     foreach ($accounts as $account) {
-      $message = $this->mailManager->mail('rules', '', $account->getEmail(), $account->getPreferredLangcode(), $params, $from);
+      $message = $this->mailManager->mail('rules', $key, $account->getEmail(), $account->getPreferredLangcode(), $params, $from);
       // If $message['result'] is FALSE, then it's likely that email sending is
       // failing at the moment, and we should just abort sending any more. If
       // however, $mesage['result'] is NULL, then it's likely that a module has
@@ -150,7 +160,7 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
 
     }
     if ($message['result'] !== FALSE) {
-      $role_names = array_intersect_key(user_roles(TRUE), array_flip($roles));
+      $role_names = array_intersect_key(user_roles(), array_flip($roles));
       $this->logger->notice($this->t('Successfully sent email to the role(s) %roles.', array('%roles' => implode(', ', $role_names))));
     }
 
