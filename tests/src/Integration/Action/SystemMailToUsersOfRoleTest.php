@@ -16,7 +16,7 @@ use Drupal\user\Entity\Role;
 use Drupal\Tests\rules\Integration\RulesUserIntegrationTestTrait;
 
 /**
- * @coversDefaultClass \Drupal\rules\Plugin\Action\SystemMailToUsersOfRole
+ * @coversDefaultClass \Drupal\rules\Plugin\RulesAction\SystemMailToUsersOfRole
  * @group rules_actions
  */
 class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
@@ -141,7 +141,7 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
     $this->container->set('config.factory', $this->getConfigFactoryStub($config));
     $this->container->set('entity.manager', $this->entityManager);
 
-   $this->action = $this->actionManager->createInstance('rules_mail_to_users_of_role');
+    $this->action = $this->actionManager->createInstance('rules_mail_to_users_of_role');
   }
 
   /**

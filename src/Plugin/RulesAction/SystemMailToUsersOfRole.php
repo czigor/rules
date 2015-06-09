@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\rules\Plugin\Action\SystemMailToUsersOfRole.
+ * Contains \Drupal\rules\Plugin\RulesAction\SystemMailToUsersOfRole.
  */
 
-namespace Drupal\rules\Plugin\Action;
+namespace Drupal\rules\Plugin\RulesAction;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Mail\MailManager;
@@ -21,7 +21,7 @@ use Drupal\user\UserStorage;
 /**
  * Provides a 'Mail to users of a role' action.
  *
- * @Action(
+ * @RulesAction(
  *   id = "rules_mail_to_users_of_role",
  *   label = @Translation("Mail to users of a role"),
  *   category = @Translation("System"),
