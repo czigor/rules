@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains Drupal\rules\Plugin\Action\SystemSendEmail.
+ * Contains Drupal\rules\Plugin\RulesAction\SystemSendEmail.
  */
 
-namespace Drupal\rules\Plugin\Action;
+namespace Drupal\rules\Plugin\RulesAction;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Mail\MailManager;
@@ -19,7 +19,7 @@ use Drupal\Core\Language\LanguageInterface;
 /**
  * Provides "Send email" rules action.
  *
- * @Action(
+ * @RulesAction(
  *   id = "rules_send_email",
  *   label = @Translation("Send email"),
  *   category = @Translation("System"),
@@ -52,7 +52,6 @@ use Drupal\Core\Language\LanguageInterface;
  *
  * @todo: Define that message Context should be textarea comparing with textfield Subject
  * @todo: Add access callback information from Drupal 7.
- * @todo: Add group information from Drupal 7.
  */
 class SystemSendEmail extends RulesActionBase implements ContainerFactoryPluginInterface {
 

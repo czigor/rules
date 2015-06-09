@@ -2,17 +2,17 @@
 
 /**
  * @file
- * Contains \Drupal\rules\Plugin\Action\DataListItemAdd.
+ * Contains \Drupal\rules\Plugin\RulesAction\DataListItemAdd.
  */
 
-namespace Drupal\rules\Plugin\Action;
+namespace Drupal\rules\Plugin\RulesAction;
 
 use Drupal\rules\Core\RulesActionBase;
 
 /**
  * Provides an 'Add list item' action.
  *
- * @Action(
+ * @RulesAction(
  *   id = "rules_list_item_add",
  *   label = @Translation("Add list item"),
  *   category = @Translation("Data"),
@@ -35,17 +35,11 @@ use Drupal\rules\Core\RulesActionBase;
  *       description = @Translation("Position to insert the item."),
  *       required = FALSE
  *     )
- *   },
- *   provides = {
- *     "outputlist" = @ContextDefinition("list",
- *       label = @Translation("The resulting data list with item added.")
- *     )
  *   }
  * )
  *
  * @todo: Add access callback information from Drupal 7?
  * @todo: set ContextDefinition restriction
- * @todo: Add info alter
  */
 class DataListItemAdd extends RulesActionBase {
 
