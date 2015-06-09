@@ -13,13 +13,15 @@ use Psr\Log\LogLevel;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\user\Entity\User;
 use Drupal\user\Entity\Role;
-use Drupal\Core\Entity\EntityManager;
+use Drupal\Tests\rules\Integration\RulesUserIntegrationTestTrait;
 
 /**
  * @coversDefaultClass \Drupal\rules\Plugin\Action\SystemMailToUsersOfRole
  * @group rules_actions
  */
 class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
+
+  use RulesUserIntegrationTestTrait;
 
   /**
    * @var \Psr\Log\LoggerInterface
@@ -62,50 +64,35 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
 
     $this->logger = $this->getMock('Psr\Log\LoggerInterface');
 
-    $this->mailManager = $this->getMockBuilder('\Drupal\Core\Mail\MailManagerInterface')
+    $this->mailManager = $this->getMockBuilder('Drupal\Core\Mail\MailManagerInterface')
       ->getMock();
 
-    $this->role = $this->getMockBuilder('\Drupal\user\Entity\Role')
+    // Mock the role entity.
+    $role_name = 'administrator';
+    $this->role = $this->getMockedUserRole($role_name);
+    $this->role->expects($this->any())
+      ->method('id')
+      ->willReturn($role_name);
+
+    // Mock the user entity.
+    $this->user = $this->getMockedUser();
+    $this->userEntityType = $this->getMockBuilder('Drupal\Core\Entity\EntityTypeInterface')
+      ->getMock();
+    $this->user->expects($this->any())
+      ->method('getEntityType')
+      ->willReturn($this->userEntityType);
+
+    $this->user->expects($this->any())
+      ->method('getPreferredLangcode')
+      ->willReturn(LanguageInterface::LANGCODE_SITE_DEFAULT);
+
+    $this->userStorage = $this->getMockBuilder('Drupal\user\UserStorage')
       ->disableOriginalConstructor()
       ->getMock();
-
-    $this->user = $this->getMockBuilder('\Drupal\user\Entity\User')
-      ->disableOriginalConstructor()
-      ->getMock();
-
-    // Prepare mocked bundle field definition. This is needed because
-    // EntityCreateDeriver adds required contexts for required fields, and
-    // assumes that the bundle field is required.
-    $this->bundleFieldDefinition = $this->getMockBuilder('Drupal\Core\Field\BaseFieldDefinition')
-      ->disableOriginalConstructor()
-      ->getMock();
-
-    // The next methods are mocked because EntityCreateDeriver executes them,
-    // and the mocked field definition is instantiated without the necessary
-    // information.
-    $this->bundleFieldDefinition
-      ->expects($this->once())
-      ->method('getCardinality')
-      ->willReturn(1);
-
-    $this->bundleFieldDefinition
-      ->expects($this->once())
-      ->method('getType')
-      ->willReturn('string');
-
-    $this->bundleFieldDefinition
-      ->expects($this->once())
-      ->method('getLabel')
-      ->willReturn('Bundle');
-
-    $this->bundleFieldDefinition
-      ->expects($this->once())
-      ->method('getDescription')
-      ->willReturn('Bundle mock description');
 
     // Prepare mocked entity manager.
     $this->entityManager = $this->getMockBuilder('Drupal\Core\Entity\EntityManager')
-      ->setMethods(['getBundleInfo', 'getStorage', 'getDefinitions', 'getBaseFieldDefinitions'])
+      ->setMethods(['getBundleInfo', 'getStorage', 'getDefinitions', 'getBaseFieldDefinitions', 'createInstance'])
       ->setConstructorArgs([
         $this->namespaces,
         $this->moduleHandler,
@@ -114,24 +101,35 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
         $this->getStringTranslationStub(),
         $this->getClassResolverStub(),
         $this->typedDataManager,
-        $this->getMock('Drupal\Core\KeyValueStore\KeyValueStoreInterface'),
+        $this->getMock('Drupal\Core\KeyValueStore\KeyValueFactoryInterface'),
         $this->getMock('Symfony\Component\EventDispatcher\EventDispatcherInterface')
       ])
       ->getMock();
+
+    // Prepare an content entity type instance.
+    $this->entityType = $this->user->getEntityType();
+
+    // Prepare mocked entity storage.
+    $this->entityTypeStorage = $this->getMockBuilder('Drupal\Core\Entity\EntityStorageBase')
+      ->setMethods(['create'])
+      ->setConstructorArgs([$this->entityType])
+      ->getMockForAbstractClass();
 
     // Return the mocked storage controller.
     $this->entityManager
       ->expects($this->any())
       ->method('getStorage')
-      ->willReturn($this->entityTypeStorage);
+      ->willReturn($this->userStorage);
 
-          // Prepare mocked entity storage.
-    /*$this->entityTypeStorage = $this->getMockBuilder('Drupal\user\UserStorage')
-      ->setMethods(['create'])
-      ->setConstructorArgs([
+    $this->entityManager
+      ->expects($this->any())
+      ->method('createInstance')
+      ->willReturn($this->userStorage);
 
-      ])
-      ->getMock();*/
+    $this->entityManager
+      ->expects($this->any())
+      ->method('getDefinitions')
+      ->willReturn($this->entityType);
 
     $this->container->set('logger.factory', $this->logger);
     $this->container->set('plugin.manager.mail', $this->mailManager);
@@ -143,7 +141,7 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
     $this->container->set('config.factory', $this->getConfigFactoryStub($config));
     $this->container->set('entity.manager', $this->entityManager);
 
-    $this->action = $this->actionManager->createInstance('rules_mail_to_users_of_role');
+   $this->action = $this->actionManager->createInstance('rules_mail_to_users_of_role');
   }
 
   /**
@@ -158,7 +156,7 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
   /**
    * Tests sending a mail to one role.
    *
-   * @dataProvider providerTestSendMailToOneRole
+   * @dataProvider providerSendMailToOneRole
    *
    * @covers ::execute
    */
@@ -168,26 +166,26 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
       ->setContextValue('subject', 'subject')
       ->setContextValue('body', 'hello');
 
-    $langcode =  LanguageInterface::LANGCODE_SITE_DEFAULT;
+    $langcode = $this->user->getPreferredLangcode();
     $params = [
       'subject' => $this->action->getContextValue('subject'),
-      'message' => $this->action->getContextValue('body'),
+      'body' => $this->action->getContextValue('body'),
     ];
 
     $this->userStorage
       ->expects($this->once())
       ->method('loadByProperties')
-      ->with(['roles' => $this->role->id()])
+      ->with(['roles' => [$this->role->id()]])
       ->willReturn([$this->user->id() => $this->user]);
     $this->mailManager
-      ->expects($this->never())
+      ->expects($this->once())
       ->method('mail')
-      ->with('rules', 'rules_action_mail_' . $this->action->getPluginId(), $this->user->getEmail(), $langcode, $params)
+      ->with('rules', 'rules_mail_to_users_of_role_' . $this->action->getPluginId(), $this->user->getEmail(), $langcode, $params)
       ->willReturn(['result' => ($call_number == 'once') ? TRUE : FALSE]);
 
-    $role_names = ($call_number == 'once') ? $this->role->label() : '';
+    $role_names = ($call_number == 'once') ? $this->role->id() : '';
     $this->logger
-      ->expects($this->never())
+      ->expects($this->{$call_number}())
       ->method('notice')
       ->with(SafeMarkup::format('Successfully sent email to the role(s) %roles.', ['%roles' => $role_names]));
 
@@ -197,7 +195,8 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
   /**
    * Data provider for self::testSendMailToOneRole().
    */
-  public function providerTestSendMailToOneRole() {
+  public function providerSendMailToOneRole() {
+    // Testing for sendings one and zero email.
     return [
       ['once'],
       ['never'],

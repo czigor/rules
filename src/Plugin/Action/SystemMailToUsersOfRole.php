@@ -84,6 +84,10 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
    *   The alias storage service.
    * @param \Drupal\Core\Mail\MailManagerInterface $mail_manager
    *   The alias mail manager service.
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The config factory.
+   * @param \Drupal\user\UserStorage $userStorage
+   *   The user storage service.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, MailManagerInterface $mail_manager, ConfigFactoryInterface $config_factory, UserStorage $userStorage) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -160,7 +164,10 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
 
     }
     if ($message['result'] !== FALSE) {
-      $role_names = array_intersect_key(user_roles(), array_flip($roles));
+      $role_names = array();
+      foreach ($roles as $role) {
+        $role_names[] = $role->id();
+      }
       $this->logger->notice($this->t('Successfully sent email to the role(s) %roles.', array('%roles' => implode(', ', $role_names))));
     }
 
