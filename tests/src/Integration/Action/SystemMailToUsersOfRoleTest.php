@@ -9,10 +9,7 @@ namespace Drupal\Tests\rules\Integration\Action;
 
 use Drupal\Tests\rules\Integration\RulesEntityIntegrationTestBase;
 use Drupal\Core\Language\LanguageInterface;
-use Psr\Log\LogLevel;
 use Drupal\Component\Utility\SafeMarkup;
-use Drupal\user\Entity\User;
-use Drupal\user\Entity\Role;
 use Drupal\Tests\rules\Integration\RulesUserIntegrationTestTrait;
 
 /**
@@ -61,6 +58,7 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
   public function setUp() {
     parent::setUp();
     $this->enableModule('user');
+    $this->namespaces[] = '';
 
     $this->logger = $this->getMock('Psr\Log\LoggerInterface');
 
@@ -70,9 +68,6 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
     // Mock the role entity.
     $role_name = 'administrator';
     $this->role = $this->getMockedUserRole($role_name);
-    $this->role->expects($this->any())
-      ->method('id')
-      ->willReturn($role_name);
 
     // Mock the user entity.
     $this->user = $this->getMockedUser();
@@ -161,8 +156,7 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
    * @covers ::execute
    */
   public function testSendMailToOneRole($call_number) {
-    $roles = [$this->role];
-    $this->action->setContextValue('roles', $roles)
+    $this->action->setContextValue('roles', [$this->role])
       ->setContextValue('subject', 'subject')
       ->setContextValue('body', 'hello');
 
@@ -180,7 +174,7 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
     $this->mailManager
       ->expects($this->once())
       ->method('mail')
-      ->with('rules', 'rules_mail_to_users_of_role_' . $this->action->getPluginId(), $this->user->getEmail(), $langcode, $params)
+      ->with('rules', $this->action->getPluginId(), $this->user->getEmail(), $langcode, $params)
       ->willReturn(['result' => ($call_number == 'once') ? TRUE : FALSE]);
 
     $role_names = ($call_number == 'once') ? $this->role->id() : '';

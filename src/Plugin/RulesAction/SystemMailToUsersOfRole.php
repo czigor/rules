@@ -8,13 +8,10 @@
 namespace Drupal\rules\Plugin\RulesAction;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\Mail\MailManager;
 use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\rules\Core\RulesActionBase;
 use Psr\Log\LoggerInterface;
-use Psr\Log\LogLevel;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\user\Entity\Role;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\user\UserStorage;
 
@@ -39,7 +36,7 @@ use Drupal\user\UserStorage;
  *       label = @Translation("Body"),
  *       description = @Translation("The body of the e-mail."),
  *     ),
- *     "from" = @ContextDefinition("string",
+ *     "from" = @ContextDefinition("email",
  *       label = @Translation("From"),
  *       description = @Translation("The from e-mail address."),
  *       required = FALSE
@@ -81,9 +78,9 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    * @param \Psr\Log\LoggerInterface $logger
-   *   The alias storage service.
+   *   The storage service.
    * @param \Drupal\Core\Mail\MailManagerInterface $mail_manager
-   *   The alias mail manager service.
+   *   The mail manager service.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory.
    * @param \Drupal\user\UserStorage $userStorage
@@ -149,7 +146,7 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
     if (empty($from)) {
       $from = $this->config->get('mail');
     }
-    $key = 'rules_mail_to_users_of_role_' . $this->getPluginId();
+    $key = $this->getPluginId();
 
     foreach ($accounts as $account) {
       $message = $this->mailManager->mail('rules', $key, $account->getEmail(), $account->getPreferredLangcode(), $params, $from);
@@ -164,11 +161,7 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
 
     }
     if ($message['result'] !== FALSE) {
-      $role_names = array();
-      foreach ($roles as $role) {
-        $role_names[] = $role->id();
-      }
-      $this->logger->notice($this->t('Successfully sent email to the role(s) %roles.', array('%roles' => implode(', ', $role_names))));
+      $this->logger->notice($this->t('Successfully sent email to the role(s) %roles.', array('%roles' => implode(', ', $rids))));
     }
 
   }
