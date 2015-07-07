@@ -36,14 +36,14 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
   protected $userStorage;
 
   /**
-   * @var \Drupal\user\Entity\Role
+   * @var \Drupal\user\Entity\Role[]
    */
-  protected $role;
+  protected $roles;
 
   /**
-   * @var \Drupal\user\Entity\User
+   * @var \Drupal\user\Entity\User[]
    */
-  protected $user;
+  protected $users;
 
   /**
    * The action to be tested.
@@ -65,21 +65,24 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
     $this->mailManager = $this->getMockBuilder('Drupal\Core\Mail\MailManagerInterface')
       ->getMock();
 
-    // Mock the role entity.
-    $role_name = 'administrator';
-    $this->role = $this->getMockedUserRole($role_name);
+    // Create two user roles and one user for each.
+    foreach (['administrator', 'editor'] as $role_name) {
+      // Mock the role entity.
+      $this->roles[] = $this->getMockedUserRole($role_name);
+      // Mock the user entity.
+      $user = $this->getMockedUser();
+      $id = $user->id();
+      $this->users[$id] = $user;
+      $this->userEntityType = $this->getMockBuilder('Drupal\Core\Entity\EntityTypeInterface')
+        ->getMock();
+      $this->users[$id]->expects($this->any())
+        ->method('getEntityType')
+        ->willReturn($this->userEntityType);
 
-    // Mock the user entity.
-    $this->user = $this->getMockedUser();
-    $this->userEntityType = $this->getMockBuilder('Drupal\Core\Entity\EntityTypeInterface')
-      ->getMock();
-    $this->user->expects($this->any())
-      ->method('getEntityType')
-      ->willReturn($this->userEntityType);
-
-    $this->user->expects($this->any())
-      ->method('getPreferredLangcode')
-      ->willReturn(LanguageInterface::LANGCODE_SITE_DEFAULT);
+      $this->users[$id]->expects($this->any())
+        ->method('getPreferredLangcode')
+        ->willReturn(LanguageInterface::LANGCODE_SITE_DEFAULT);
+    }
 
     $this->userStorage = $this->getMockBuilder('Drupal\user\UserStorage')
       ->disableOriginalConstructor()
@@ -101,8 +104,8 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
       ])
       ->getMock();
 
-    // Prepare an content entity type instance.
-    $this->entityType = $this->user->getEntityType();
+    // Prepare a user entity type instance.
+    $this->entityType = reset($this->users)->getEntityType();
 
     // Prepare mocked entity storage.
     $this->entityTypeStorage = $this->getMockBuilder('Drupal\Core\Entity\EntityStorageBase')
@@ -149,18 +152,51 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
   }
 
   /**
-   * Tests sending a mail to one role.
+   * Tests sending a mail to one or two roles.
    *
-   * @dataProvider providerSendMailToOneRole
+   * @dataProvider providerSendMailToRole
    *
    * @covers ::execute
    */
-  public function testSendMailToOneRole($call_number) {
-    $this->action->setContextValue('roles', [$this->role])
+  public function testSendMailToRole($call_number, $role_number) {
+    // Unfortunately providerSendMailToRole() runs before setUp() so we can't
+    // set these things up there.
+    // Sending mail to one role.
+    if ($role_number == 1) {
+      $user = reset($this->users);
+      $roles = [$this->roles[0]];
+      $users = [$user->id() => $user];
+      $this->_testSendMailToRole($call_number, $roles, $users);
+    }
+    // Sending mail to two roles.
+    elseif ($role_number == 2) {
+      $roles = $this->roles;
+      $users = $this->users;
+      $this->_testSendMailToRole($call_number, $roles, $users);
+    }
+  }
+
+  /**
+   * Helper function for testSendMailToRole().
+   *
+   * @param string $call_number
+   *   The number of emails that should be sent.
+   * @param \Drupal\user\Entity\Role[] $roles
+   *   The array of Role objects to send the email to.
+   * @param \Drupal\user\Entity\User[] $users
+   *   The array of users that should get this email.
+   *
+   */
+  private function _testSendMailToRole($call_number, $roles, $users) {
+    $rids = [];
+    foreach ($roles as $role) {
+      $rids[] = $role->id();
+    }
+    $this->action->setContextValue('roles', $roles)
       ->setContextValue('subject', 'subject')
       ->setContextValue('body', 'hello');
 
-    $langcode = $this->user->getPreferredLangcode();
+    $langcode = reset($users)->getPreferredLangcode();
     $params = [
       'subject' => $this->action->getContextValue('subject'),
       'body' => $this->action->getContextValue('body'),
@@ -169,31 +205,34 @@ class SystemMailToUsersOfRoleTest extends RulesEntityIntegrationTestBase {
     $this->userStorage
       ->expects($this->once())
       ->method('loadByProperties')
-      ->with(['roles' => [$this->role->id()]])
-      ->willReturn([$this->user->id() => $this->user]);
-    $this->mailManager
-      ->expects($this->once())
-      ->method('mail')
-      ->with('rules', $this->action->getPluginId(), $this->user->getEmail(), $langcode, $params)
-      ->willReturn(['result' => ($call_number == 'once') ? TRUE : FALSE]);
+      ->with(['roles' => $roles])
+      ->willReturn($users);
+    foreach ($users as $user) {
+      $this->mailManager
+        ->expects($this->once())
+        ->method('mail')
+        ->with('rules', $this->action->getPluginId(), $user->getEmail(), $langcode, $params)
+        ->willReturn(['result' => ($call_number == 'once') ? TRUE : FALSE]);
 
-    $role_names = ($call_number == 'once') ? $this->role->id() : '';
-    $this->logger
-      ->expects($this->{$call_number}())
-      ->method('notice')
-      ->with(SafeMarkup::format('Successfully sent email to the role(s) %roles.', ['%roles' => $role_names]));
 
+      $this->logger
+        ->expects($this->{$call_number}())
+        ->method('notice')
+        ->with(SafeMarkup::format('Successfully sent email to the role(s) %roles.', ['%roles' => implode(', ', $rids)]));
+    }
     $this->action->execute();
   }
 
   /**
-   * Data provider for self::testSendMailToOneRole().
+   * Data provider for self::testSendMailToRole().
    */
-  public function providerSendMailToOneRole() {
-    // Testing for sendings one and zero email.
+  public function providerSendMailToRole() {
+    // Test sendings one or zero email to one or two roles.
     return [
-      ['once'],
-      ['never'],
+      ['once', 1],
+      ['never', 1],
+      ['once', 2],
+      ['never', 2],
     ];
   }
 }

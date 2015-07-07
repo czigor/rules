@@ -121,6 +121,7 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
    */
   public function execute() {
     $roles = $this->getContextValue('roles');
+
     if (empty($roles)) {
       return;
     }
@@ -135,9 +136,9 @@ class SystemMailToUsersOfRole extends RulesActionBase implements ContainerFactor
 
     // Get now all the users that match the roles (at least one of the role).
     $accounts = $this->userStorage
-      ->loadByProperties(['roles' => $rids]);
-    // @todo: Should we implement support for tokens in subject and body? in the
-    // Drupal 7 version it is not implemented for each user.
+      ->loadByProperties(['roles' => $roles]);
+    // @todo: Should we implement support for user tokens in subject and body? In the
+    // Drupal 7 version it is not implemented.
     $params = array(
       'subject' => $this->getContextValue('subject'),
       'body' => $this->getContextValue('body'),
